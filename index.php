@@ -13,6 +13,8 @@ if(isset($_POST["login"])) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         if(!$user) {
             setFlash("Uživatel neexistuje!", "danger");
+        } else if($user["active"] == 0) {
+          setFlash("Uživatel je zablokovaný!", "danger");
         } else {
             if(password_verify($password, $user["password"])) {
                 $_SESSION["identity"] = $user;

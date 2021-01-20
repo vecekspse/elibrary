@@ -32,7 +32,7 @@
             </li>          
             <?php else: ?>
             <li class="nav-item">
-              <a class="nav-link" href="#">Knihovna</a>
+              <a class="nav-link" href="knihovna.php">Knihovna</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="profil.php?id=<?php echo $_SESSION["identity"]["id"]; ?>"><?php echo $_SESSION["identity"]["username"]; ?></a>
