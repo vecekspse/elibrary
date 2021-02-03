@@ -1,5 +1,12 @@
 <?php require_once "config.php"; ?>
 <?php
+
+$sql = "SELECT * FROM books WHERE active = 1 ORDER BY title LIMIT 5;";
+$stmt = $db->prepare($sql);
+$stmt->execute();
+$books = $stmt->fetchAll();
+
+
 if(isset($_POST["login"])) {
     $email = $_POST["email"];
     $password = $_POST["password"];
@@ -10,7 +17,7 @@ if(isset($_POST["login"])) {
         $sql = "SELECT * FROM users WHERE email = :email";
         $stmt = $db->prepare($sql);
         $stmt->execute([":email" => $email]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch();
         if(!$user) {
             setFlash("Uživatel neexistuje!", "danger");
         } else if($user["active"] == 0) {
@@ -32,92 +39,37 @@ if(isset($_POST["login"])) {
 ?>
 <?php require_once "header.php"; ?>
 
-
-<section class="random-books py-5">
-      <div class="container">
-        <h2 class="mb-3">Mohlo by vás zajímat</h2>
-        <div class="row">
-          <div class="col-lg-2">
-            <article class="book">
-              <img src="assets/images/book.png" alt="" width="200" height="300">
-              <div class="book-info">
-                <h3 class="book-title">Název knihy</h3>
-                <p>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere, quasi? Natus illo atque modi accusamus doloribus! Tempora reprehenderit rerum adipisci.
-                </p>
-                <a href="#" class="btn btn-primary">Detail</a>
-                <a href="#" class="btn btn-outline-primary">Do knihovny</a>
-              </div>
-            </article>
-          </div>
-          <div class="col-lg-2">
-            <article class="book">
-              <img src="assets/images/book.png" alt="" width="200" height="300">
-              <div class="book-info">
-                <h3 class="book-title">Název knihy</h3>
-                <p>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere, quasi? Natus illo atque modi accusamus doloribus! Tempora reprehenderit rerum adipisci.
-                </p>
-                <a href="#" class="btn btn-primary">Detail</a>
-                <a href="#" class="btn btn-outline-primary">Do knihovny</a>
-              </div>
-            </article>
-          </div>
-          <div class="col-lg-2">
-            <article class="book">
-              <img src="assets/images/book.png" alt="" width="200" height="300">
-              <div class="book-info">
-                <h3 class="book-title">Název knihy</h3>
-                <p>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere, quasi? Natus illo atque modi accusamus doloribus! Tempora reprehenderit rerum adipisci.
-                </p>
-                <a href="#" class="btn btn-primary">Detail</a>
-                <a href="#" class="btn btn-outline-primary">Do knihovny</a>
-              </div>
-            </article>
-          </div>
-          <div class="col-lg-2">
-            <article class="book">
-              <img src="assets/images/book.png" alt="" width="200" height="300">
-              <div class="book-info">
-                <h3 class="book-title">Název knihy</h3>
-                <p>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere, quasi? Natus illo atque modi accusamus doloribus! Tempora reprehenderit rerum adipisci.
-                </p>
-                <a href="#" class="btn btn-primary">Detail</a>
-                <a href="#" class="btn btn-outline-primary">Do knihovny</a>
-              </div>
-            </article>
-          </div>
-          <div class="col-lg-2">
-            <article class="book">
-              <img src="assets/images/book.png" alt="" width="200" height="300">
-              <div class="book-info">
-                <h3 class="book-title">Název knihy</h3>
-                <p>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere, quasi? Natus illo atque modi accusamus doloribus! Tempora reprehenderit rerum adipisci.
-                </p>
-                <a href="#" class="btn btn-primary">Detail</a>
-                <a href="#" class="btn btn-outline-primary">Do knihovny</a>
-              </div>
-            </article>
-          </div>
-          <div class="col-lg-2">
-            <article class="book">
-              <img src="assets/images/book.png" alt="" width="200" height="300">
-              <div class="book-info">
-                <h3 class="book-title">Název knihy</h3>
-                <p>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Facere, quasi? Natus illo atque modi accusamus doloribus! Tempora reprehenderit rerum adipisci.
-                </p>
-                <a href="#" class="btn btn-primary">Detail</a>
-                <a href="#" class="btn btn-outline-primary">Do knihovny</a>
-              </div>
-            </article>
-          </div>
+<section class="bookcase py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-3">Knihovna</h2>
+            <a href="pridat-knihu.php" class="btn btn-primary">Přidat novou knihu</a>
         </div>
-      </div>
-    </section>
+        <?php if(!empty($books)) : ?>
+        <div class="row">
+            <?php foreach($books as $book): ?>
+            <div class="col-md-3">
+                <div class="card">
+                    <img src="<?= $book["cover_url"]; ?>" class="card-img-top" alt="<?= $book["title"]; ?>">
+                    <div class="card-body">
+                        <h5 class="card-title"><?= $book["title"]; ?></h5>
+                        <p class="text-muted text-uppercase"><?= $book["author"]; ?></p>
+                        <p class="card-text"><?= $book["content"]; ?></p>
+                        <p>
+                            <a class="btn btn-primary" href="upravit-knihu.php?id=<?= $book["id"]; ?>">Upravit knihu</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+        <p>
+            Zatím tu žádné knihy nejsou.
+        </p>
+        <?php endif; ?>
+    </div>
+</section>
     <?php if(!isset($_SESSION["identity"])) : ?>
     <section class="login py-5">
       <div class="container">

@@ -18,6 +18,50 @@ if(!$user) {
     exit();    
 }
 
+if(isset($_POST["changeUser"])) {
+    $valid = true;
+
+    $email = filter_input(INPUT_POST, "email", FILTER_VALIDATE_EMAIL);
+    $username = filter_input(INPUT_POST, "username", FILTER_SANITIZE_STRING);
+
+    $sql = "SELECT * FROM users WHERE (email = :email OR username = :username) AND id != :id;";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([
+        ":email" => $email,
+        ":username" => $username,
+        ":id" => $user["id"]
+    ]);
+    $userCheck = $stmt->fetch();
+
+    if(!$email) {
+        setFlash("E-mail musí být vyplněný a ve správném tvaru!", "danger");
+        $valid = false;
+    }
+    if(!empty($userCheck) && $userCheck["email"] == $email) {
+        setFlash("E-mail je obsazený!", "danger");
+        $valid = false;
+    }
+    if(!empty($userCheck) && $userCheck["username"] == $username) {
+        setFlash("Uživatelské jméno je zabrané!", "danger");
+        $valid = false;
+    }
+
+    if($valid) {
+        $sql = "UPDATE users SET email = :email, username = :username WHERE id = :id;";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ":email" => $email,
+            ":username" => $username,
+            ":id" => $_SESSION["identity"]["id"]
+        ]);
+        $_SESSION["identity"]["email"] = $email;
+        $_SESSION["identity"]["username"] = $username;
+        setFlash("Změna hesla byla úspěšná!", "success");
+
+        header("Location: profil.php?id=".$user["id"]);
+        exit();
+    }
+}
 if(isset($_POST["changePassword"])) {
     $valid = true;
 
@@ -77,6 +121,10 @@ if(isset($_GET["logout"])) {
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changePassword">
                 Změna hesla
             </button>
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changeUser">
+                Změna údajů
+            </button>
         </p>
 
         <a href="profil.php?id=<?php echo $user["id"]; ?>&logout">Odhlásit se</a>
@@ -109,6 +157,33 @@ if(isset($_GET["logout"])) {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
                     <button name="changePassword" type="submit" class="btn btn-primary">Uložit změny</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="changeUser" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="profil.php?id=<?php echo $user["id"]; ?>" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Změna uživatelských údajů</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Váš e-mail</label>
+                    <input name="email" type="email" class="form-control" value="<?= $user["email"] ?>">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Váše uživatelské jméno</label>
+                    <input name="username" type="text" class="form-control" value="<?= $user["username"] ?>">
+                </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+                    <button name="changeUser" type="submit" class="btn btn-primary">Uložit změny</button>
                 </div>
             </form>
         </div>
