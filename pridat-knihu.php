@@ -1,5 +1,10 @@
 <?php require_once "config.php"; ?>
 <?php
+    $sql = "SELECT * FROM categories;";
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
+    $categories = $stmt->fetchAll();
+
     if(isset($_POST["addBook"])) {
         $valid = true;
 
@@ -40,6 +45,16 @@
                 ":cover_url" => $fileName,
                 ":active" => 1
             ]);
+
+            if(!empty($_POST["categories"])) {
+                $book_id = $db->lastInsertId();
+                $sql = "INSERT INTO books_has_categories VALUES(:books_id, :categories_id);";
+                $stmt = $db->prepare($sql);
+                foreach($_POST["categories"] as $category) {
+                    $stmt->execute([":books_id" => $book_id, ":categories_id" => $category]);
+                }
+            }
+
             setFlash("Děkujeme za vložení nové knihy!", "success");
             header("Location: knihovna.php");
             exit();
@@ -69,6 +84,17 @@
                     <label class="form-label">Obsah knihy <span class="text-muted">(nepovinné)</span></label>
                     <textarea name="content" class="form-control" rows="10"></textarea>
                 </div>
+            <div class="mb-3">
+                <label class="form-label">Žánry</label>
+                <?php foreach($categories as $category) : ?>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="categories[]" value="<?= $category["id"]; ?>">
+                        <label class="form-check-label">
+                            <?= $category["title"]; ?>
+                        </label>
+                    </div>
+                <?php endforeach; ?>
+            </div>
                 <div class="mb-3">
                     <label class="form-label">Obálka knihy</label>
                     <input name="cover_url" type="file" class="form-control">

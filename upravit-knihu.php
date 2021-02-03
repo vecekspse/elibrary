@@ -13,6 +13,19 @@
         exit();
     }
 
+    $sql = "SELECT * FROM categories;";
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
+    $categories = $stmt->fetchAll();
+
+    $sql = "SELECT c.title FROM books_has_categories AS bc
+            JOIN categories AS c ON c.id = bc.categories_id
+            WHERE bc.books_id = :id;";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([":id" => $book["id"]]);
+    $bookCategories = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+
+
     if(isset($_POST["editBook"])) {
         $valid = true;
 
@@ -56,6 +69,22 @@
                 ":cover_url" => $fileName,
                 ":id" => $id
             ]);
+
+            if(!empty($_POST["categories"])) {
+                $book_id = $id;
+
+                $sql = "DELETE FROM books_has_categories WHERE books_id = :books_id;";                
+                $stmt = $db->prepare($sql);
+                $stmt->execute([":books_id" => $book_id]);
+
+                $sql = "INSERT INTO books_has_categories VALUES(:books_id, :categories_id);";
+                $stmt = $db->prepare($sql);
+                foreach($_POST["categories"] as $category) {
+                    $stmt->execute([":books_id" => $book_id, ":categories_id" => $category]);
+                }
+            }
+
+
             setFlash("Upravili jste knihu!", "success");
             header("Location: knihovna.php");
             exit();
@@ -84,6 +113,19 @@
                     <div class="mb-3">
                         <label class="form-label">Obsah knihy <span class="text-muted">(nepovinné)</span></label>
                         <textarea name="content" class="form-control" rows="10"><?= $book["content"]; ?></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Žánry</label>
+                        <?php foreach($categories as $category) : 
+                            $checked = (in_array($category["title"], $bookCategories)) ? " checked" : "";
+                        ?>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="categories[]" value="<?= $category["id"]; ?>"<?= $checked; ?>>
+                                <label class="form-check-label">
+                                    <?= $category["title"]; ?>
+                                </label>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Obálka knihy</label>
