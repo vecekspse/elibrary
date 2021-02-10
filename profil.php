@@ -18,6 +18,15 @@ if(!$user) {
     exit();    
 }
 
+$sql = "SELECT b.id, b.title, b.author, b.content, b.cover_url, urb.stars, urb.review FROM user_rated_book AS urb
+        JOIN books AS b ON urb.books_id = b.id
+        WHERE urb.users_id = :users_id;";
+
+$stmt = $db->prepare($sql);
+$stmt->execute([":users_id" => $user["id"]]);
+$books = $stmt->fetchAll();
+
+
 if(isset($_POST["changeUser"])) {
     $valid = true;
 
@@ -128,6 +137,53 @@ if(isset($_GET["logout"])) {
         </p>
 
         <a href="profil.php?id=<?php echo $user["id"]; ?>&logout">Odhlásit se</a>
+    </div>
+</section>
+
+<section class="my-books py-5">
+    <div class="container">
+        <h2 class="mb-3">Moje knihovna</h2>
+        <?php if(!empty($books)) : ?>
+        <div class="row">
+            <?php foreach($books as $book): 
+                // vytažení informací o žánrech každé knihy
+                $sql = "SELECT c.title FROM books_has_categories AS bc
+                        JOIN categories AS c ON c.id = bc.categories_id
+                        WHERE bc.books_id = :id;";
+                $stmt = $db->prepare($sql);
+                $stmt->execute([":id" => $book["id"]]);
+                $categories = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+            ?>
+            <div class="col-md-3">
+                <div class="card mb-3">
+                    <img src="<?= $book["cover_url"]; ?>" class="card-img-top" alt="<?= $book["title"]; ?>">
+                    <div class="card-body">
+                        <div class="pb-3">
+                        <?php if(!empty($categories)) : ?>
+                            <?php foreach($categories as $category) : ?>
+                                <span class="badge bg-secondary"><?= $category; ?></span>
+                            <?php endforeach; ?>    
+                        <?php endif; ?>
+                        </div>
+                        <h5 class="card-title"><?= $book["title"]; ?></h5>
+                        <p class="text-muted text-uppercase"><?= $book["author"]; ?></p>
+                        <p><?= $book["review"]; ?></p>
+                        <p>
+                        <?php for($i = 0; $i < (int)$book["stars"]; $i++) { echo "*"; } ?>
+                        </p> 
+                        <p>
+                            <a class="btn btn-danger" href="knihovna.php?like_id=<?= $book["id"]; ?>">Like</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+        <p>
+            Zatím tu žádné knihy nejsou.
+        </p>
+        <?php endif; ?>    
     </div>
 </section>
 

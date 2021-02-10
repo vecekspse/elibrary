@@ -1,10 +1,42 @@
 <?php require_once "config.php"; ?>
 <?php
-  $sql = "SELECT * FROM books WHERE active = 1 ORDER BY title LIMIT 5;";
+  $sql = "SELECT * FROM books WHERE active = 1 ORDER BY title LIMIT 10;";
   $stmt = $db->prepare($sql);
   $stmt->execute();
   $books = $stmt->fetchAll();
   
+  if(isset($_POST["rateBook"])) {
+    $bookId = $_POST["book_id"];
+    $userId = $_SESSION["identity"]["id"];
+    $stars = $_POST["stars"];
+    $review = $_POST["review"];
+
+    $sql = "INSERT INTO user_rated_book (stars, review, books_id, users_id) VALUES (:stars, :review, :books_id, :users_id);";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([":stars" => $stars, ":review" => $review, ":books_id" => $bookId, ":users_id" => $userId]);
+
+    setFlash("Kniha přidána do oblíbených", "success");
+
+    header("Location: knihovna.php");
+    exit();    
+
+  }
+//   if(isset($_GET["like_id"])) {
+
+//     $bookId = $_GET["like_id"];
+//     $userId = $_SESSION["identity"]["id"];
+
+//     $sql = "INSERT INTO user_rated_book (books_id, users_id) VALUES (:books_id, :users_id);";
+//     $stmt = $db->prepare($sql);
+//     $stmt->execute([":books_id" => $bookId, ":users_id" => $userId]);
+
+//     setFlash("Kniha přidána do oblíbených", "success");
+
+//     header("Location: knihovna.php");
+//     exit();    
+//   }
+
+
 ?>
 <?php require_once "header.php"; ?>
 <section class="bookcase py-5">
@@ -41,6 +73,12 @@
                         <p>
                             <a class="btn btn-primary" href="upravit-knihu.php?id=<?= $book["id"]; ?>">Upravit knihu</a>
                         </p>
+                        <p>
+                                        <!-- Button trigger modal -->
+                            <button type="button" class="likeBtn btn btn-danger" data-book-id="<?= $book["id"]; ?>" data-bs-toggle="modal" data-bs-target="#rateBook">
+                               Ohodnotit knihu
+                            </button>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -54,6 +92,50 @@
     </div>
 </section>
 
+<!-- Modal -->
+<div class="modal fade" id="rateBook" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="knihovna.php" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Přidat knihu do knihovny</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Vaše hodnocení</label>
+                        <select name="stars" class="form-select">
+                            <option value="NULL">Vyberte vaše hodnocení</option>
+                            <option value="1">*</option>
+                            <option value="2">**</option>
+                            <option value="3">***</option>
+                            <option value="4">****</option>
+                            <option value="5">*****</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Slovní hodnocení</label>
+                        <textarea name="review" class="form-control" rows="3"></textarea>
+                    </div>
+                    <input type="hidden" name="book_id" value="" class="hiddenId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+                    <button name="rateBook" type="submit" class="btn btn-primary">Ohodnotit knihu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
+<script>
+"use strict"
+const btns = document.querySelectorAll(".likeBtn");
+[...btns].forEach(btn => {
+    btn.addEventListener("click", ev => {
+        document.querySelector(".hiddenId").value = btn.getAttribute("data-book-id");
+    })
+});
+</script>
 
 <?php require_once "footer.php"; ?>
